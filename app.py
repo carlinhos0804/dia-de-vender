@@ -34,7 +34,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. CONTROLE DE TEMPO (TRAVA DE 1 MINUTO)
+# 3. CONTROLE DE TEMPO (TRAVA DE 20 SEGUNDOS)
 if 'last_run_time' not in st.session_state:
     st.session_state.last_run_time = None
 if 'roteiro_lista' not in st.session_state:
@@ -44,7 +44,7 @@ def tempo_espera_restante():
     if st.session_state.last_run_time is None:
         return 0
     passado = (datetime.now() - st.session_state.last_run_time).total_seconds()
-    restante = 60 - passado
+    restante = 20 - passado  # Tempo alterado para 20 segundos
     return int(restante) if restante > 0 else 0
 
 # 4. INTERFACE
@@ -59,7 +59,7 @@ espera = tempo_espera_restante()
 
 # 5. LÓGICA DO BOTÃO COM TRAVA
 if espera > 0:
-    st.markdown(f'<div class="timer-aviso">⏳ IA em resfriamento. Aguarde {espera} segundos para gerar novas ideias e evitar travamentos.</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="timer-aviso">⏳ Aguarde {espera}s para gerar novas ideias...</div>', unsafe_allow_html=True)
     time.sleep(1)
     st.rerun()
 else:
@@ -85,13 +85,13 @@ else:
                         st.rerun()
                     except Exception as e:
                         if "429" in str(e):
-                            st.error("Cota excedida! O Google pediu uma pausa. Tente em 1 minuto.")
+                            st.error("Cota excedida! Tente novamente em alguns segundos.")
                         else:
                             st.error(f"Erro: {e}")
         else:
             st.warning("Insira um tema.")
 
-# 6. EXIBIÇÃO DOS STORIES
+# 6. EXIBIÇÃO
 if st.session_state.roteiro_lista:
     st.markdown("---")
     for i, story_txt in enumerate(st.session_state.roteiro_lista):
@@ -110,5 +110,5 @@ if st.session_state.roteiro_lista:
 
     if st.button("🗑️ Limpar e Criar Novo"):
         st.session_state.roteiro_lista = []
-        st.session_state.last_run_time = None # Opcional: remover se quiser forçar a espera mesmo limpando
+        st.session_state.last_run_time = None 
         st.rerun()
