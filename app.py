@@ -3,15 +3,12 @@ import google.generativeai as genai
 import time
 from datetime import datetime, timedelta
 
-# 1. CONFIGURAÇÃO
-try:
-    API_KEY = st.secrets["GOOGLE_API_KEY"]
-    genai.configure(api_key=API_KEY)
-    model = genai.GenerativeModel('gemini-1.5-flash')
-except Exception as e:
-    st.error("Erro na chave API. Verifique os Secrets.")
+# 1. MODELO DA SUA LISTA (Sem números e sem erro de chat)
+genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+# Usando o identificador direto que você confirmou que funciona
+model = genai.GenerativeModel('gemini-flash')
 
-# 2. DESIGN
+# 2. DESIGN PREMIUM
 st.set_page_config(page_title="Expert Stories Pro", page_icon="🎬", layout="centered")
 st.markdown("""
     <style>
@@ -25,16 +22,16 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. MEMÓRIA
-if 'resultado' not in st.session_state:
-    st.session_state.resultado = None
-if 'last_run' not in st.session_state:
-    st.session_state.last_run = None
+# 3. PERSISTÊNCIA (Garante que as 5 ideias fiquem na tela)
+if 'meus_stories' not in st.session_state:
+    st.session_state.meus_stories = None
+if 'timer_run' not in st.session_state:
+    st.session_state.timer_run = None
 
-def pode_gerar():
-    if st.session_state.last_run is None:
+def liberado():
+    if st.session_state.timer_run is None:
         return True
-    return datetime.now() - st.session_state.last_run > timedelta(seconds=15)
+    return datetime.now() - st.session_state.timer_run > timedelta(seconds=20)
 
 # 4. INTERFACE
 URL_LOGO = "https://i.postimg.cc/v1zDLM9S/image.png" 
@@ -44,36 +41,38 @@ st.markdown("<h1 style='text-align:center; color:#f1c40f;'>Expert Stories Pro</h
 tema = st.text_input("Qual o tema de hoje?", placeholder="Ex: Bastidores")
 estilo = st.selectbox("Personalidade", ["Venda Direta", "Autoridade", "Humanizado"])
 
-# 5. LÓGICA
-if pode_gerar():
-    if st.button("🚀 GERAR MEUS 5 STORIES"):
+# 5. GERAÇÃO (Usando generate_content direto para evitar erro de chat)
+if liberado():
+    if st.button("🚀 GERAR 5 STORIES"):
         if tema:
-            with st.spinner('Gerando roteiro...'):
+            with st.spinner('Acessando Gemini Flash...'):
                 try:
-                    prompt = f"Crie 5 stories para Instagram sobre {tema} no estilo {estilo}. Liste: Horário, Cena e Fala."
+                    # Instrução focada em 5 blocos de texto
+                    prompt = f"Crie 5 stories para Instagram sobre {tema} no estilo {estilo}. Para cada story, descreva: Horário, Cena e Fala."
                     response = model.generate_content(prompt)
+                    
                     if response.text:
-                        st.session_state.resultado = response.text
-                        st.session_state.last_run = datetime.now()
+                        st.session_state.meus_stories = response.text
+                        st.session_state.timer_run = datetime.now()
                         st.rerun()
                 except Exception as e:
-                    st.error(f"Erro no Google: {str(e)}")
+                    st.error(f"Erro no modelo Flash: {str(e)}")
         else:
             st.warning("Preencha o tema.")
 else:
-    restante = 15 - int((datetime.now() - st.session_state.last_run).total_seconds())
-    st.info(f"⏳ IA recarregando. Disponível em {restante}s")
+    espera = 20 - int((datetime.now() - st.session_state.timer_run).total_seconds())
+    st.info(f"⏳ IA recarregando em {espera}s")
     time.sleep(1)
     st.rerun()
 
-# 6. EXIBIÇÃO (LINHA 70 CORRIGIDA)
-if st.session_state.resultado:
+# 6. EXIBIÇÃO FINAL
+if st.session_state.meus_stories:
     st.markdown(f"""
     <div class="stBox">
-        <div class="fala-texto">{st.session_state.resultado}</div>
+        <div class="fala-texto">{st.session_state.meus_stories}</div>
     </div>
     """, unsafe_allow_html=True)
     
-    if st.button("🗑️ Limpar"):
-        st.session_state.resultado = None
+    if st.button("🗑️ Gerar Novos"):
+        st.session_state.meus_stories = None
         st.rerun()
