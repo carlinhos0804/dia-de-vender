@@ -3,16 +3,15 @@ import google.generativeai as genai
 import time
 from datetime import datetime, timedelta
 
-# 1. CONFIGURAÇÃO DIRETA (Garante que a chave seja lida)
+# 1. CONFIGURAÇÃO
 try:
     API_KEY = st.secrets["GOOGLE_API_KEY"]
     genai.configure(api_key=API_KEY)
-    # Modelo padrão universal - mais difícil de dar erro 404
     model = genai.GenerativeModel('gemini-1.5-flash')
 except Exception as e:
-    st.error("Erro ao carregar a chave dos Secrets. Verifique se o nome é GOOGLE_API_KEY")
+    st.error("Erro na chave API. Verifique os Secrets.")
 
-# 2. DESIGN EXPERT (Preto, Verde e Amarelo)
+# 2. DESIGN
 st.set_page_config(page_title="Expert Stories Pro", page_icon="🎬", layout="centered")
 st.markdown("""
     <style>
@@ -26,12 +25,15 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. GERENCIAMENTO DE ESTADO
-if 'resultado' not in st.session_state: st.session_state.resultado = None
-if 'last_run' not in st.session_state: st.session_state.last_run = None
+# 3. MEMÓRIA
+if 'resultado' not in st.session_state:
+    st.session_state.resultado = None
+if 'last_run' not in st.session_state:
+    st.session_state.last_run = None
 
 def pode_gerar():
-    if st.session_state.last_run is None: return True
+    if st.session_state.last_run is None:
+        return True
     return datetime.now() - st.session_state.last_run > timedelta(seconds=15)
 
 # 4. INTERFACE
@@ -39,32 +41,39 @@ URL_LOGO = "https://i.postimg.cc/v1zDLM9S/image.png"
 st.markdown(f'<div class="logo-container"><img src="{URL_LOGO}" class="logo-img"></div>', unsafe_allow_html=True)
 st.markdown("<h1 style='text-align:center; color:#f1c40f;'>Expert Stories Pro</h1>", unsafe_allow_html=True)
 
-tema = st.text_input("Qual o tema de hoje?", placeholder="Ex: Promoção de Verão")
+tema = st.text_input("Qual o tema de hoje?", placeholder="Ex: Bastidores")
 estilo = st.selectbox("Personalidade", ["Venda Direta", "Autoridade", "Humanizado"])
 
-# 5. EXECUÇÃO SIMPLIFICADA (Apenas generate_content)
+# 5. LÓGICA
 if pode_gerar():
     if st.button("🚀 GERAR MEUS 5 STORIES"):
         if tema:
-            with st.spinner('A IA está trabalhando...'):
+            with st.spinner('Gerando roteiro...'):
                 try:
-                    # Instrução direta para evitar bloqueios
-                    prompt = f"Escreva 5 ideias de stories para Instagram. Tema: {tema}. Estilo: {estilo}. Para cada story diga: Horário, Cena e Fala."
+                    prompt = f"Crie 5 stories para Instagram sobre {tema} no estilo {estilo}. Liste: Horário, Cena e Fala."
                     response = model.generate_content(prompt)
-                    
                     if response.text:
                         st.session_state.resultado = response.text
                         st.session_state.last_run = datetime.now()
                         st.rerun()
                 except Exception as e:
-                    st.error(f"Erro técnico do Google: {str(e)}")
+                    st.error(f"Erro no Google: {str(e)}")
         else:
-            st.warning("Digite um tema primeiro.")
+            st.warning("Preencha o tema.")
 else:
-    tempo_restante = 15 - int((datetime.now() - st.session_state.last_run).total_seconds())
-    st.info(f"⏳ Aguarde {tempo_restante}s para gerar novamente.")
+    restante = 15 - int((datetime.now() - st.session_state.last_run).total_seconds())
+    st.info(f"⏳ IA recarregando. Disponível em {restante}s")
     time.sleep(1)
     st.rerun()
 
-# 6. EXIBIÇÃO PERMANENTE
+# 6. EXIBIÇÃO (LINHA 70 CORRIGIDA)
 if st.session_state.resultado:
+    st.markdown(f"""
+    <div class="stBox">
+        <div class="fala-texto">{st.session_state.resultado}</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    if st.button("🗑️ Limpar"):
+        st.session_state.resultado = None
+        st.rerun()
