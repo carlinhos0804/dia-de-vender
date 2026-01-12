@@ -2,14 +2,13 @@ import streamlit as st
 import google.generativeai as genai
 import json
 
-# Forçar a configuração da API e testar o modelo estável
+# 1. Configuração da API
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 
-# Tente usar o nome técnico completo do modelo
-try:
-    model = genai.GenerativeModel('models/gemini-1.5-flash')
-except:
-    model = genai.GenerativeModel('gemini-pro')
+# Usando o modelo que confirmamos estar disponível na sua lista
+model = genai.GenerativeModel('models/gemini-2.0-flash')
+
+# (O restante do código de interface e botões permanece o mesmo)
 # 2. Configuração da Página
 st.set_page_config(page_title="Expert Stories - Business", page_icon="👔", layout="wide")
 
