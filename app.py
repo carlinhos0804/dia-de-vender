@@ -3,18 +3,19 @@ import google.generativeai as genai
 import time
 from datetime import datetime, timedelta
 
-# 1. CONFIGURAÇÃO UNIVERSAL (Tenta os dois caminhos possíveis)
+# 1. CONFIGURAÇÃO DE ACESSO (O segredo do erro 404 está aqui)
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 
-# Testamos o acesso ao modelo de forma robusta
+# Tentativa de conexão com o modelo Pro estável
 try:
+    # Tentamos o nome direto que costuma funcionar em contas v1beta
     model = genai.GenerativeModel('gemini-pro')
 except:
+    # Se falhar, tentamos o caminho completo do servidor
     model = genai.GenerativeModel('models/gemini-pro')
 
-# 2. DESIGN PREMIUM (Ouro, Verde e Preto)
+# 2. DESIGN (Ouro e Verde - Identidade Expert)
 st.set_page_config(page_title="Expert Stories Pro", page_icon="🎬", layout="centered")
-
 st.markdown("""
     <style>
     .stApp { background-color: #000000; color: #ffffff; }
@@ -28,8 +29,8 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. MEMÓRIA DE SESSÃO
-if 'roteiro' not in st.session_state: st.session_state.roteiro = None
+# 3. CONTROLE DE SESSÃO
+if 'conteudo' not in st.session_state: st.session_state.conteudo = None
 if 'last_run' not in st.session_state: st.session_state.last_run = None
 
 def can_run():
@@ -42,43 +43,41 @@ st.markdown(f'<div class="logo-container"><img src="{URL_LOGO}" class="logo-img"
 st.title("Expert Stories Pro")
 
 # 5. INPUTS
-tema = st.text_input("Qual o tema de hoje?", placeholder="Digite aqui...")
+tema = st.text_input("Qual o tema de hoje?", placeholder="Ex: Bastidores da Loja")
 estilo = st.selectbox("Personalidade", ["Venda Direta", "Autoridade", "Humanizado"])
 
-# 6. LOGICA DE EXECUÇÃO DIRETA
+# 6. GERAÇÃO
 if can_run():
-    if st.button("🚀 GERAR AGORA"):
+    if st.button("🚀 GERAR 5 STORIES AGORA"):
         if tema:
-            with st.spinner('Conectando ao servidor...'):
+            with st.spinner('Conectando ao modelo Pro...'):
                 try:
-                    # Prompt sem comandos complexos de JSON para não travar
+                    # Prompt direto para garantir 5 ideias
                     prompt = f"Roteiro de 5 stories para Instagram. Tema: {tema}. Estilo: {estilo}. Liste Story 1, Story 2, Story 3, Story 4 e Story 5 com Cena e Fala."
-                    
                     response = model.generate_content(prompt)
                     
                     if response.text:
-                        st.session_state.roteiro = response.text
+                        st.session_state.conteudo = response.text
                         st.session_state.last_run = datetime.now()
                         st.rerun()
                 except Exception as e:
-                    st.error(f"Erro na API: {str(e)}")
-                    st.info("Dica: Verifique se sua chave API no Streamlit Cloud está ativa.")
+                    st.error(f"Erro Crítico: {str(e)}")
         else:
             st.warning("Preencha o tema.")
 else:
     rem = 10 - int((datetime.now() - st.session_state.last_run).total_seconds())
-    st.info(f"⏳ Recarregando... {rem}s")
+    st.info(f"⏳ IA Recarregando... Disponível em {rem}s")
 
 # 7. EXIBIÇÃO
-if st.session_state.roteiro:
+if st.session_state.conteudo:
     st.markdown(f"""
     <div class="stBox">
-        <div class="fala-texto">{st.session_state.roteiro}</div>
+        <div class="fala-texto">{st.session_state.conteudo}</div>
     </div>
     """, unsafe_allow_html=True)
     
-    if st.button("🗑️ Nova Ideia"):
-        st.session_state.roteiro = None
+    if st.button("🗑️ Limpar"):
+        st.session_state.conteudo = None
         st.rerun()
 
 if not can_run():
