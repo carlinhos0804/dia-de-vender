@@ -5,7 +5,7 @@ import json
 # 1. Configuração da API - Usando a versão Lite (mais estável para cotas)
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 # Este modelo estava na sua lista e é o que menos dá erro de 'Quota'
-model = genai.GenerativeModel('models/gemini-2.0-flash-lite')
+model = genai.GenerativeModel('models/gemini-1.5-flash-latest')
 
 # 2. Configuração da Página
 st.set_page_config(page_title="Dia de Vender - Stories", page_icon="🎬", layout="wide")
