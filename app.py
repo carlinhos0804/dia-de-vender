@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 
 # Na v1beta, o nome técnico correto para o volume é este:
-model = genai.GenerativeModel('models/gemini-pro')
+model = genai.GenerativeModel('models/gemini-1.5-flash')
 
 # 2. DESIGN PREMIUM (Preto, Verde e Amarelo)
 st.set_page_config(page_title="Expert Stories Pro", page_icon="🎬", layout="centered")
