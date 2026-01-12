@@ -4,7 +4,7 @@ import json
 
 # 1. Configuração da API - Usando a versão 2.0 que apareceu na sua lista
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-model = genai.GenerativeModel('models/gemini-2.0-flash')
+model = genai.GenerativeModel('models/gemini-1.5-pro')
 
 # 2. Configuração da Página
 st.set_page_config(page_title="Expert Stories 2.0", page_icon="👔", layout="wide")
