@@ -1,73 +1,92 @@
 import streamlit as st
 import google.generativeai as genai
+import json
 
-# Busca a chave dos Secrets do Streamlit
-google_api_key = st.secrets["GOOGLE_API_KEY"]
+# 1. Configuração da API
+genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+# Usando o modelo flash para velocidade, ou 'gemini-1.5-pro' para mais qualidade
+model = genai.GenerativeModel('gemini-1.5-flash')
 
-# Configura a API com a chave recuperada
-genai.configure(api_key=google_api_key)
+# 2. Configuração da Página
+st.set_page_config(page_title="Expert Stories - Business", page_icon="👔", layout="wide")
 
-# Exemplo de uso para gerar conteúdo
-model = genai.GenerativeModel('gemini-pro')
-import streamlit as st
-
-# Configuração da página
-st.set_page_config(page_title="Gerador de Stories", page_icon="🎬")
-
-# Estilização básica para simular o visual dark do seu código original
+# CSS Personalizado para um look mais Profissional
 st.markdown("""
     <style>
-    .main {
-        background-color: #0f172a;
+    .stApp { background-color: #0f172a; color: white; }
+    .stButton>button { 
+        width: 100%; 
+        border-radius: 8px; 
+        background-color: #3b82f6; 
+        color: white; 
+        font-weight: bold;
+        height: 3em;
     }
-    .stAlert {
-        background-color: #1e293b;
-        border: 1px solid #334155;
-    }
+    .stTextInput>div>div>input { background-color: #1e293b; color: white; border: 1px solid #334155; }
     </style>
-    """, unsafe_allow_html=True) # <-- O segredo está neste nome aqui!
+    """, unsafe_allow_html=True)
 
-def render_story_card(story):
-    """Função que recria o seu StoryCard do React"""
-    with st.container(border=True):
-        # Header do Card
-        st.markdown(f"### :blue[Story {story['id']}]")
-        
-        # Seção Visual
-        st.markdown("**🎥 O que gravar (Visual)**")
-        st.write(story['visual'])
-        
-        st.divider()
-        
-        # Seção Legenda com botão de copiar automático (st.code)
-        st.markdown("**📝 O que escrever (Legenda)**")
-        st.code(story['legenda'], language=None)
-        
-        # Seção Script (Fala)
-        st.markdown("**💬 O que falar (Script)**")
-        st.info(story['fala'])
+st.title("👔 Gerador de Roteiros Profissionais")
+st.write("Crie sequências estratégicas de stories para fortalecer sua autoridade.")
 
-# --- ÁREA DE DADOS (Exemplo) ---
-# Aqui entraria a lógica que você criou com o Gemini para gerar o texto
-stories_exemplo = [
-    {
-        "id": 1,
-        "visual": "Mostre os bastidores do seu setup de trabalho.",
-        "legenda": "Foco total no projeto de hoje! 🚀",
-        "fala": "Bom dia pessoal! Hoje estou focado em finalizar a nova interface do app..."
-    },
-    {
-        "id": 2,
-        "visual": "Close no café ou na tela do computador.",
-        "legenda": "Café + Código = ❤️",
-        "fala": "Sem café a gente não produz, né? Quem mais aí é viciado?"
-    }
-]
+# 3. Entradas do Usuário em Colunas
+col1, col2 = st.columns([2, 1])
 
-# --- INTERFACE PRINCIPAL ---
-st.title("🎬 Planejador de Stories")
-st.subheader("Seu roteiro pronto para gravar")
+with col1:
+    tema = st.text_input("Qual o tema ou objetivo da sequência?", placeholder="Ex: Lançamento de consultoria, Quebra de objeção sobre preço...")
 
-# Renderizando os cards
-for s in stories_exemplo:
-    render_story_card(s)
+with col2:
+    tom_voz = st.selectbox("Tom de Voz", ["Profissional e Autoritário", "Educativo e Calmo", "Direto e Comercial", "Inspirador"])
+
+if st.button("Gerar Sequência de 5+ Stories"):
+    if not tema:
+        st.error("Por favor, descreva o tema para prosseguir.")
+    else:
+        with st.spinner('A IA está estruturando sua narrativa estratégica...'):
+            try:
+                # Prompt Refinado para Profissionalismo e Quantidade
+                prompt = f"""
+                Atue como um estrategista de conteúdo para Instagram. 
+                Crie uma sequência de no MÍNIMO 5 stories sobre: {tema}.
+                O tom de voz deve ser: {tom_voz}.
+                
+                Estruture a sequência para que tenha:
+                1. Gancho de atenção (Hook)
+                2. Desenvolvimento do problema/solução
+                3. Prova social ou autoridade
+                4. Quebra de objeção
+                5. Chamada para ação clara (CTA)
+
+                Responda APENAS com um JSON no formato abaixo:
+                [
+                  {{"id": 1, "visual": "descrição da cena", "legenda": "texto curto para tela", "fala": "script detalhado"}},
+                  ...
+                ]
+                """
+                
+                response = model.generate_content(prompt)
+                
+                # Limpeza de Markdown do JSON
+                clean_text = response.text.replace('```json', '').replace('```', '').strip()
+                stories = json.loads(clean_text)
+
+                # 4. Exibição em Grid (Opcional: 1 por linha para foco)
+                for story in stories:
+                    with st.container(border=True):
+                        c1, c2 = st.columns([1, 4])
+                        with c1:
+                            st.markdown(f"## 🎬 {story['id']}")
+                        with c2:
+                            st.caption("📸 VISUAL RECOMENDADO")
+                            st.write(story['visual'])
+                            
+                            st.caption("✍️ LEGENDA (TELA)")
+                            st.code(story['legenda'], language=None)
+                            
+                            st.caption("🗣️ SCRIPT DE FALA")
+                            st.info(story['fala'])
+                
+                st.success(f"Sequência de {len(stories)} stories gerada com sucesso!")
+
+            except Exception as e:
+                st.error(f"Ocorreu um erro na geração. Verifique sua chave de API ou tente novamente. Erro: {e}")
