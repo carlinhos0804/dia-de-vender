@@ -25,7 +25,7 @@ st.markdown("""
         border: 1px solid #334155;
     }
     </style>
-    """, unsafe_allow_input_with_html=True)
+    """, unsafe_allow_html=True) # <-- O segredo está neste nome aqui!
 
 def render_story_card(story):
     """Função que recria o seu StoryCard do React"""
