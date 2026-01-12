@@ -4,7 +4,7 @@ import json
 import time
 from datetime import datetime, timedelta
 
-# 1. Configuração do Modelo (Foco em Estabilidade)
+# 1. Configuração do Modelo
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 model = genai.GenerativeModel('gemini-2.0-flash')
 
@@ -16,7 +16,7 @@ st.markdown("""
     .stApp { background-color: #000000; color: #ffffff; }
     .logo-container { display: flex; justify-content: center; padding-top: 20px; }
     .logo-img { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #2ecc71; box-shadow: 0px 0px 15px rgba(46,204,113,0.3); }
-    .stBox { background-color: #111111 !important; border-radius: 15px !important; padding: 20px !important; margin-bottom: 20px !important; border-left: 5px solid #f1c40f !important; }
+    .stBox { background-color: #111111 !important; border-radius: 15px !important; padding: 20px !important; margin-bottom: 20px !important; border-left: 6px solid #f1c40f !important; }
     h1 { color: #f1c40f !important; text-align: center; font-size: 1.8em !important; font-weight: 800; }
     .stButton>button { width: 100%; background: linear-gradient(90deg, #2ecc71 0%, #27ae60 100%) !important; color: white !important; font-weight: bold !important; border-radius: 50px !important; border: none !important; height: 3.5em !important; }
     .stButton>button:disabled { background: #333 !important; color: #777 !important; }
@@ -26,13 +26,13 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. Gerenciamento de Memória (Cooldown)
+# 3. Gerenciamento de Memória
 if 'last_run' not in st.session_state:
     st.session_state.last_run = None
 
 def can_run():
     if st.session_state.last_run is None: return True
-    return datetime.now() - st.session_state.last_run > timedelta(seconds=45)
+    return datetime.now() - st.session_state.last_run > timedelta(seconds=40)
 
 # 4. Cabeçalho
 URL_LOGO = "https://i.postimg.cc/v1zDLM9S/image.png" 
@@ -43,50 +43,41 @@ st.title("Expert Stories Pro")
 tema = st.text_input("Qual o tema de hoje?", placeholder="Ex: Bastidores da Loja")
 estilo = st.selectbox("Estilo", ["Venda Direta", "Autoridade", "Humanizado"])
 
-# 6. Geração com "Segurança de Falha"
+# 6. GERAÇÃO "FORÇA BRUTA"
 if can_run():
     if st.button("🚀 GERAR ROTEIRO AGORA"):
         if tema:
-            with st.spinner('A IA está escrevendo...'):
+            with st.spinner('A IA está preparando tudo...'):
                 try:
-                    # Prompt reforçado para evitar erros de lógica
-                    prompt = f"Crie 3 stories para Instagram sobre {tema} no estilo {estilo}. Responda APENAS o JSON: [{{'horario': '...', 'cena': '...', 'jeito': '...', 'fala': '...'}}]"
+                    # Prompt que obriga a resposta a ser simples
+                    prompt = f"Crie 3 stories para Instagram sobre {tema} no estilo {estilo}. Use este formato exato para cada story: HORARIO: texto, CENA: texto, JEITO: texto, FALA: texto."
                     
                     response = model.generate_content(prompt)
                     
-                    # Se a resposta vier vazia ou bloqueada pelo Google
                     if not response.text:
-                        st.error("O Google bloqueou esta resposta por segurança. Tente um tema diferente.")
+                        st.error("O Google não liberou essa resposta. Tente mudar um pouco as palavras do tema.")
                     else:
-                        res_text = response.text.strip()
-                        
-                        # Limpeza robusta de Markdown
-                        if "```" in res_text:
-                            res_text = res_text.split("```")[1]
-                            if res_text.startswith("json"):
-                                res_text = res_text[4:]
-                            res_text = res_text.split("```")[0].strip()
-                        
-                        stories = json.loads(res_text)
+                        conteudo = response.text
                         st.session_state.last_run = datetime.now()
-
-                        for s in stories:
+                        
+                        # Tenta mostrar como cards, se falhar, mostra o texto puro
+                        try:
+                            # Se a IA mandou em blocos de texto, vamos apenas exibir
                             st.markdown(f"""
                             <div class="stBox">
-                                <span class="horario-tag">⏰ {s.get('horario', 'Sugestão')}</span>
-                                <p><b>🎬 Cena:</b> {s.get('cena', '...')}</p>
-                                <p><b>🤳 Gravação:</b> {s.get('jeito', '...')}</p>
-                                <div class="fala-texto">"{s.get('fala', '...')}"</div>
+                                <span class="horario-tag">🎬 Roteiro Gerado</span>
+                                <div style="white-space: pre-wrap;">{conteudo}</div>
                             </div>
                             """, unsafe_allow_html=True)
-                        st.rerun()
+                        except:
+                            st.write(conteudo)
                 except Exception as e:
-                    st.error("A IA teve um soluço. Aguarde o contador e tente novamente.")
-                    st.session_state.last_run = datetime.now() # Ativa o cooldown para limpar a API
+                    st.error("Aguarde o contador terminar para tentar novamente.")
+                    st.session_state.last_run = datetime.now()
         else:
             st.warning("Preencha o tema.")
 else:
-    rem = 45 - int((datetime.now() - st.session_state.last_run).total_seconds())
-    st.button(f"⏳ RECARREGANDO IA EM {rem}s", disabled=True)
+    rem = 40 - int((datetime.now() - st.session_state.last_run).total_seconds())
+    st.button(f"⏳ RECARREGANDO EM {rem}s", disabled=True)
     time.sleep(1)
     st.rerun()
