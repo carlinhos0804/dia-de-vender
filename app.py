@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 # 1. Configuração do Modelo (Item 20 que funcionou)
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-model = genai.GenerativeModel('models/gemini-flash-latest')
+model = genai.GenerativeModel('gemini-1.5-flash-001')
 
 # 2. Design Premium (Preto, Verde e Amarelo)
 st.set_page_config(page_title="Expert Stories Pro", page_icon="🎬", layout="centered")
