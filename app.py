@@ -30,7 +30,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 st.title("👔 Gerador de Roteiros Profissionais")
-st.write("Crie sequências estratégicas de stories para fortalecer sua autoridade.")
+st.write("Modelos disponíveis:", [m.name for m in genai.list_models()])
 
 # 3. Entradas do Usuário em Colunas
 col1, col2 = st.columns([2, 1])
