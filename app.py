@@ -28,8 +28,8 @@ col1, col2 = st.columns([2, 1])
 with col1:
     tema = st.text_input("Qual o tema da sequência?", placeholder="Ex: Lançamento do meu novo produto...")
 with col2:
-    # Mudando o nome para evitar confusão com áudio
-    estilo = st.selectbox("Estilo do Roteiro", ["Autoridade Profissional", "Venda Direta", "Educativo/Dicas", "Inspirador/Storytelling"])
+    tom_voz = st.selectbox("Tom de Voz", ["Profissional", "Direto e Comercial", "Educativo", "Inspirador"])
+
 # 4. Botão e Lógica
 if st.button("Gerar Sequência de 5 Stories"):
     if not tema:
