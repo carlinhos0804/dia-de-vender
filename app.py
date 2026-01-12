@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 # 1. CONFIGURAÇÃO - Usando o ID técnico que evita o erro de "modelo não disponível"
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 # Este nome 'models/gemini-1.5-flash-latest' é o mais compatível de todos
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-pro')
 
 # 2. DESIGN (Preto, Verde e Amarelo)
 st.set_page_config(page_title="Expert Stories Pro", page_icon="🎬", layout="centered")
