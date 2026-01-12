@@ -1,11 +1,13 @@
 import streamlit as st
 import google.generativeai as genai
 import json
+import time
 
 # 1. Configuração da API
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-# Usamos o 2.0-flash que é rápido e profissional
-model = genai.GenerativeModel('models/gemini-2.0-flash')
+
+# Trocamos para o 1.5-flash que tem limites de uso gratuito maiores
+model = genai.GenerativeModel('models/gemini-1.5-flash')
 
 # 2. Configuração da Página
 st.set_page_config(page_title="Expert Stories - Business", page_icon="👔", layout="wide")
@@ -72,5 +74,8 @@ if st.button("Gerar Sequência Estratégica"):
                 
                 st.success("Pronto! Agora é só gravar.")
 
-            except Exception as e:
-                st.error(f"Erro ao processar: {e}")
+           except Exception as e:
+    if "429" in str(e):
+        st.error("🚨 Limite de uso atingido! Aguarde 30 segundos e tente novamente. O Google limita a quantidade de gerações gratuitas por minuto.")
+    else:
+        st.error(f"Erro ao processar: {e}")
