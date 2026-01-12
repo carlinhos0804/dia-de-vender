@@ -100,9 +100,23 @@ if st.button("GERAR ROTEIRO DO DIA"):
     if tema:
         with st.spinner('Criando estratégia...'):
             try:
-                prompt = f"Crie 5 stories para Instagram sobre {tema} no estilo {estilo}. Sugira horários. Retorne JSON com: horario, cena, jeito, fala."
+                # Prompt mais curto e direto para evitar erros de processamento
+                prompt = f"""
+                Crie um roteiro de 5 stories sobre {tema}. Estilo {estilo}.
+                Retorne estritamente um JSON (sem markdown e sem texto extra) com este formato:
+                [
+                  {{"horario": "08:00", "cena": "texto", "jeito": "texto", "fala": "texto"}}
+                ]
+                """
                 response = model.generate_content(prompt)
-                res_text = response.text.replace('```json', '').replace('```', '').strip()
+                
+                # Limpeza profunda do texto para garantir que o JSON funcione
+                res_text = response.text.strip()
+                if "```json" in res_text:
+                    res_text = res_text.split("```json")[1].split("```")[0].strip()
+                elif "```" in res_text:
+                    res_text = res_text.split("```")[1].split("```")[0].strip()
+                
                 stories = json.loads(res_text)
 
                 for s in stories:
@@ -117,7 +131,10 @@ if st.button("GERAR ROTEIRO DO DIA"):
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
-            except:
-                st.error("Erro ao gerar. Tente novamente em alguns segundos.")
+            except Exception as e:
+                if "429" in str(e):
+                    st.error("⏳ O Google limitou o acesso por agora. Aguarde 30 segundos e tente novamente.")
+                else:
+                    st.error(f"A IA teve um soluço técnico. Tente clicar no botão novamente. (Detalhe: {e})")
     else:
         st.warning("Coloque um tema primeiro.")
