@@ -6,98 +6,101 @@ import json
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 model = genai.GenerativeModel('models/gemini-flash-latest')
 
-# 2. Configuração Visual (Corrigida para evitar SyntaxError)
+# 2. Configuração Visual (Estilo Premium sem cara de código)
 st.set_page_config(page_title="Expert Stories Pro", page_icon="🎬", layout="centered")
 
 st.markdown("""
     <style>
+    /* Fundo Preto */
     .stApp {
         background-color: #000000;
         color: #ffffff;
     }
+    
+    /* Logo Centralizada */
     .logo-container {
         display: flex;
         justify-content: center;
-        margin-bottom: -10px;
-        padding-top: 30px;
+        padding-top: 20px;
     }
     .logo-img {
-        width: 130px;
-        height: 130px;
+        width: 120px;
+        height: 120px;
         border-radius: 50%;
         object-fit: cover;
-        border: 4px solid #2ecc71;
-        box-shadow: 0px 0px 20px rgba(46, 204, 113, 0.4);
-        background-color: #111;
+        border: 3px solid #2ecc71;
+        box-shadow: 0px 0px 15px rgba(46, 204, 113, 0.3);
     }
+
+    /* Cards Elegantes */
     .stBox {
-        background-color: #1a1a1a !important;
-        border-radius: 20px !important;
-        padding: 25px !important;
-        box-shadow: 0px 10px 30px rgba(0,0,0,0.5) !important;
-        margin-bottom: 25px !important;
-        border-left: 6px solid #f1c40f !important;
+        background-color: #111111 !important;
+        border-radius: 15px !important;
+        padding: 20px !important;
+        margin-bottom: 20px !important;
+        border: 1px solid #222 !important;
+        border-left: 5px solid #f1c40f !important;
     }
-    h1 { 
-        color: #f1c40f !important; 
-        text-align: center; 
-        font-size: 2.2em !important; 
-        font-weight: 800 !important;
-    }
+    
+    h1 { color: #f1c40f !important; text-align: center; font-size: 1.8em !important; }
+    
+    /* Botão sem bordas técnicas */
     .stButton>button {
         width: 100%;
         background: linear-gradient(90deg, #2ecc71 0%, #27ae60 100%) !important;
         color: white !important;
         font-weight: bold !important;
-        border-radius: 50px !important;
+        border-radius: 12px !important;
         border: none !important;
-        height: 4em !important;
+        height: 3.5em !important;
+        font-size: 16px !important;
     }
-    .horario-badge {
-        background-color: #f1c40f;
-        color: #000;
-        padding: 6px 18px;
-        border-radius: 50px;
+
+    .horario-tag {
+        color: #f1c40f;
         font-weight: bold;
-        display: inline-block;
+        font-size: 0.9em;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+        display: block;
     }
-    .fala-container {
-        background: #0d2116; 
-        padding: 15px; 
-        border-radius: 10px; 
-        border: 1px dashed #2ecc71;
+
+    .fala-texto {
+        background-color: #0d1a12;
         color: #2ecc71;
+        padding: 15px;
+        border-radius: 8px;
+        font-style: italic;
+        line-height: 1.5;
+        border-left: 2px solid #2ecc71;
     }
+
+    /* Esconder elementos desnecessários do Streamlit */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
     </style>
     """, unsafe_allow_html=True)
 
-# 3. Cabeçalho com Sua Imagem
+# 3. Cabeçalho
 URL_LOGO = "https://i.postimg.cc/v1zDLM9S/image.png" 
-
 st.markdown(f"""
     <div class="logo-container">
         <img src="{URL_LOGO}" class="logo-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
     </div>
     """, unsafe_allow_html=True)
 
-st.title("Story Expert - Black & Gold")
+st.title("Story Expert")
 
-# 4. Interface
-with st.container():
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        tema = st.text_input("Qual o objetivo de hoje?", placeholder="Ex: Venda de mentoria...")
-    with col2:
-        estilo = st.selectbox("Personalidade", ["Venda Direta", "Autoridade", "Humanizado", "Curiosidade"])
+# 4. Entrada simples
+tema = st.text_input("Qual o tema de hoje?", placeholder="Ex: Bastidores da Loja")
+estilo = st.selectbox("Estilo", ["Venda", "Autoridade", "Bastidores", "Dicas"])
 
-# 5. Lógica de Geração
-if st.button("Gerar Cronograma Estratégico"):
-    if not tema:
-        st.warning("Por favor, preencha o tema.")
-    else:
-        with st.spinner('Processando...'):
+if st.button("GERAR ROTEIRO DO DIA"):
+    if tema:
+        with st.spinner('Criando estratégia...'):
             try:
-                prompt = f"Crie um cronograma de 5 stories sobre: {tema}. Estilo: {estilo}. Distribua em horários comerciais. Retorne um JSON puro com: horario, cena, jeito, fala."
+                prompt = f"Crie 5 stories para Instagram sobre {tema} no estilo {estilo}. Sugira horários. Retorne JSON com: horario, cena, jeito, fala."
                 response = model.generate_content(prompt)
                 res_text = response.text.replace('```json', '').replace('```', '').strip()
                 stories = json.loads(res_text)
@@ -105,16 +108,16 @@ if st.button("Gerar Cronograma Estratégico"):
                 for s in stories:
                     st.markdown(f"""
                     <div class="stBox">
-                        <div class="horario-badge">⌚ {s['horario']}</div>
-                        <p style="margin-top:15px; color: #eee;"><b>🎬 CENA:</b> {s['cena']}</p>
-                        <p style="color: #eee;"><b>🤳 GRAVAÇÃO:</b> {s['jeito']}</p>
-                        <hr style="border: 0.5px solid #333">
-                        <p style="color:#f1c40f; font-weight:bold; margin-bottom:10px;">🗣️ O QUE FALAR:</p>
-                        <div class="fala-container">
-                            <i>"{s['fala']}"</i>
+                        <span class="horario-tag">⏰ Sugestão: {s['horario']}</span>
+                        <p style="margin-bottom:8px;"><b>🎬 Cena:</b> {s['cena']}</p>
+                        <p style="margin-bottom:15px;"><b>🤳 Como gravar:</b> {s['jeito']}</p>
+                        <p style="color:#f1c40f; font-size:0.8em; font-weight:bold; margin-bottom:5px;">O QUE FALAR:</p>
+                        <div class="fala-texto">
+                            "{s['fala']}"
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
-                st.success("Roteiro finalizado!")
-            except Exception as e:
-                st.error(f"Erro: {e}")
+            except:
+                st.error("Erro ao gerar. Tente novamente em alguns segundos.")
+    else:
+        st.warning("Coloque um tema primeiro.")
