@@ -3,18 +3,12 @@ import google.generativeai as genai
 import time
 from datetime import datetime, timedelta
 
-# 1. CONFIGURAÇÃO DE ACESSO (O segredo do erro 404 está aqui)
+# 1. CONFIGURAÇÃO COM O NOME TÉCNICO COMPATÍVEL (v1beta)
+# O modelo 'gemini-1.0-pro' é o sucessor direto do 'gemini-pro' original
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+model = genai.GenerativeModel('gemini-1.0-pro')
 
-# Tentativa de conexão com o modelo Pro estável
-try:
-    # Tentamos o nome direto que costuma funcionar em contas v1beta
-    model = genai.GenerativeModel('gemini-pro')
-except:
-    # Se falhar, tentamos o caminho completo do servidor
-    model = genai.GenerativeModel('models/gemini-pro')
-
-# 2. DESIGN (Ouro e Verde - Identidade Expert)
+# 2. DESIGN PREMIUM (Ouro, Verde e Preto)
 st.set_page_config(page_title="Expert Stories Pro", page_icon="🎬", layout="centered")
 st.markdown("""
     <style>
@@ -30,7 +24,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # 3. CONTROLE DE SESSÃO
-if 'conteudo' not in st.session_state: st.session_state.conteudo = None
+if 'roteiro' not in st.session_state: st.session_state.roteiro = None
 if 'last_run' not in st.session_state: st.session_state.last_run = None
 
 def can_run():
@@ -43,43 +37,46 @@ st.markdown(f'<div class="logo-container"><img src="{URL_LOGO}" class="logo-img"
 st.title("Expert Stories Pro")
 
 # 5. INPUTS
-tema = st.text_input("Qual o tema de hoje?", placeholder="Ex: Bastidores da Loja")
-estilo = st.selectbox("Personalidade", ["Venda Direta", "Autoridade", "Humanizado"])
+tema = st.text_input("Qual o tema estratégico de hoje?", placeholder="Ex: Bastidores da produção")
+estilo = st.selectbox("Personalidade da IA", ["Venda Direta", "Autoridade", "Humanizado"])
 
-# 6. GERAÇÃO
+# 6. EXECUÇÃO COM O MODELO COMPATÍVEL
 if can_run():
     if st.button("🚀 GERAR 5 STORIES AGORA"):
         if tema:
-            with st.spinner('Conectando ao modelo Pro...'):
+            with st.spinner('Conectando ao modelo estável...'):
                 try:
-                    # Prompt direto para garantir 5 ideias
-                    prompt = f"Roteiro de 5 stories para Instagram. Tema: {tema}. Estilo: {estilo}. Liste Story 1, Story 2, Story 3, Story 4 e Story 5 com Cena e Fala."
+                    # Prompt limpo para garantir o roteiro
+                    prompt = f"Crie um roteiro de 5 stories para Instagram sobre {tema} no estilo {estilo}. Descreva Cena e Fala para cada um."
+                    
                     response = model.generate_content(prompt)
                     
                     if response.text:
-                        st.session_state.conteudo = response.text
+                        st.session_state.roteiro = response.text
                         st.session_state.last_run = datetime.now()
                         st.rerun()
                 except Exception as e:
-                    st.error(f"Erro Crítico: {str(e)}")
+                    st.error(f"Erro ao conectar: {str(e)}")
         else:
-            st.warning("Preencha o tema.")
+            st.warning("Insira um tema para continuar.")
 else:
     rem = 10 - int((datetime.now() - st.session_state.last_run).total_seconds())
-    st.info(f"⏳ IA Recarregando... Disponível em {rem}s")
+    st.info(f"⏳ Recarregando... Próximo roteiro em {rem} segundos.")
 
-# 7. EXIBIÇÃO
-if st.session_state.conteudo:
+# 7. EXIBIÇÃO DOS RESULTADOS
+if st.session_state.roteiro:
     st.markdown(f"""
     <div class="stBox">
-        <div class="fala-texto">{st.session_state.conteudo}</div>
+        <span style="color: #f1c40f; font-weight: bold; font-size: 1.2em;">🎬 Roteiro Sugerido:</span>
+        <div class="fala-texto">{st.session_state.roteiro}</div>
     </div>
     """, unsafe_allow_html=True)
     
-    if st.button("🗑️ Limpar"):
-        st.session_state.conteudo = None
+    if st.button("🗑️ Limpar e Criar Novo"):
+        st.session_state.roteiro = None
         st.rerun()
 
+# Atualização discreta do timer
 if not can_run():
     time.sleep(1)
     st.rerun()
