@@ -1,4 +1,15 @@
 import streamlit as st
+import google.generativeai as genai
+
+# Busca a chave dos Secrets do Streamlit
+google_api_key = st.secrets["GOOGLE_API_KEY"]
+
+# Configura a API com a chave recuperada
+genai.configure(api_key=google_api_key)
+
+# Exemplo de uso para gerar conteúdo
+model = genai.GenerativeModel('gemini-pro')
+import streamlit as st
 
 # Configuração da página
 st.set_page_config(page_title="Gerador de Stories", page_icon="🎬")
