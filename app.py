@@ -1,13 +1,30 @@
 import streamlit as st
 import google.generativeai as genai
 import time
+import random
 from datetime import datetime, timedelta
 
-# 1. CONFIGURAÇÃO COM TRATAMENTO DE COTA
-genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-model = genai.GenerativeModel('gemini-1.5-flash')
+# 1. SISTEMA DE REVEZAMENTO DE CHAVES (FAILOVER)
+def obter_modelo():
+    # Lista de chaves configuradas nos Secrets
+    chaves = [st.secrets.get("GOOGLE_API_KEY_1"), st.secrets.get("GOOGLE_API_KEY_2")]
+    # Remove chaves nulas caso você só tenha configurado uma
+    chaves = [c for c in chaves if c]
+    
+    # Tenta as chaves em ordem aleatória para distribuir a carga
+    random.shuffle(chaves)
+    
+    for chave in chaves:
+        try:
+            genai.configure(api_key=chave)
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            # Teste rápido de conexão
+            return model, "Sucesso"
+        except:
+            continue
+    return None, "Erro"
 
-# 2. DESIGN PREMIUM
+# 2. DESIGN PREMIUM (Ouro, Verde e Preto)
 st.set_page_config(page_title="Expert Stories Pro", page_icon="🎬", layout="centered")
 st.markdown("""
     <style>
@@ -20,14 +37,13 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. ESTADO DA SESSÃO
+# 3. MEMÓRIA
 if 'conteudo' not in st.session_state: st.session_state.conteudo = None
 if 'last_run' not in st.session_state: st.session_state.last_run = None
 
-# Aumentamos o tempo para 30 segundos para respeitar a cota gratuita
-def pode_gerar():
+def liberado():
     if st.session_state.last_run is None: return True
-    return datetime.now() - st.session_state.last_run > timedelta(seconds=30)
+    return datetime.now() - st.session_state.last_run > timedelta(seconds=15)
 
 # 4. INTERFACE
 URL_LOGO = "https://i.postimg.cc/v1zDLM9S/image.png" 
@@ -37,29 +53,34 @@ st.markdown("<h1 style='text-align:center; color:#f1c40f;'>Expert Stories Pro</h
 tema = st.text_input("Qual o tema de hoje?", placeholder="Ex: Bastidores")
 estilo = st.selectbox("Estilo", ["Venda Direta", "Autoridade", "Humanizado"])
 
-# 5. EXECUÇÃO COM TRATAMENTO DE ERRO 429
-if pode_gerar():
-    if st.button("🚀 GERAR ROTEIRO"):
+# 5. EXECUÇÃO COM RODÍZIO DE CHAVES
+if liberado():
+    if st.button("🚀 GERAR ROTEIRO COM REVEZAMENTO"):
         if tema:
-            with st.spinner('Solicitando permissão ao Google...'):
-                try:
-                    prompt = f"Crie 5 stories para Instagram sobre {tema} no estilo {estilo}. Liste Horário, Cena e Fala."
-                    response = model.generate_content(prompt)
-                    st.session_state.conteudo = response.text
-                    st.session_state.last_run = datetime.now()
-                    st.rerun()
-                except Exception as e:
-                    if "429" in str(e):
-                        st.error("🚨 COTA ESGOTADA: O Google limitou seu uso gratuito por agora. Aguarde alguns minutos ou troque a API Key.")
-                    else:
-                        st.error(f"Erro: {e}")
+            with st.spinner('Alternando entre chaves API para evitar bloqueio...'):
+                model, status = obter_modelo()
+                if status == "Sucesso":
+                    try:
+                        prompt = f"Crie 5 stories para Instagram sobre {tema} no estilo {estilo}. Liste Horário, Cena e Fala."
+                        response = model.generate_content(prompt)
+                        st.session_state.conteudo = response.text
+                        st.session_state.last_run = datetime.now()
+                        st.rerun()
+                    except Exception as e:
+                        if "429" in str(e):
+                            st.error("🚨 Ambas as chaves atingiram o limite. Aguarde 1 minuto.")
+                        else:
+                            st.error(f"Erro inesperado: {e}")
+                else:
+                    st.error("Nenhuma chave API configurada ou válida encontrada.")
         else:
             st.warning("Preencha o tema.")
 else:
-    espera = 30 - int((datetime.now() - st.session_state.last_run).total_seconds())
-    st.info(f"⏳ Respeitando limites do Google... Disponível em {espera}s")
+    espera = 15 - int((datetime.now() - st.session_state.last_run).total_seconds())
+    st.info(f"⏳ IA em resfriamento... Disponível em {espera}s")
     time.sleep(1)
     st.rerun()
 
+# 6. EXIBIÇÃO
 if st.session_state.conteudo:
     st.markdown(f'<div class="stBox"><div class="fala-texto">{st.session_state.conteudo}</div></div>', unsafe_allow_html=True)
