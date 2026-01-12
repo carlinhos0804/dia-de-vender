@@ -4,91 +4,73 @@ import json
 
 # 1. Configuração da API
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-
-# Usando o modelo que confirmamos estar disponível na sua lista
+# Usamos o 2.0-flash que é rápido e profissional
 model = genai.GenerativeModel('models/gemini-2.0-flash')
 
-# (O restante do código de interface e botões permanece o mesmo)
 # 2. Configuração da Página
 st.set_page_config(page_title="Expert Stories - Business", page_icon="👔", layout="wide")
 
-# CSS Personalizado para um look mais Profissional
+# CSS para visual Dark e Profissional
 st.markdown("""
     <style>
     .stApp { background-color: #0f172a; color: white; }
     .stButton>button { 
-        width: 100%; 
-        border-radius: 8px; 
-        background-color: #3b82f6; 
-        color: white; 
-        font-weight: bold;
-        height: 3em;
+        width: 100%; border-radius: 8px; background-color: #3b82f6; 
+        color: white; font-weight: bold; height: 3em;
     }
     .stTextInput>div>div>input { background-color: #1e293b; color: white; border: 1px solid #334155; }
+    [data-testid="stMetricValue"] { color: #3b82f6; }
     </style>
     """, unsafe_allow_html=True)
 
 st.title("👔 Gerador de Roteiros Profissionais")
-st.write("Modelos disponíveis:", [m.name for m in genai.list_models()])
+st.write("Crie sequências estratégicas de no mínimo 5 stories.")
 
-# 3. Entradas do Usuário em Colunas
+# 3. Interface de Entrada
 col1, col2 = st.columns([2, 1])
 
 with col1:
-    tema = st.text_input("Qual o tema ou objetivo da sequência?", placeholder="Ex: Lançamento de consultoria, Quebra de objeção sobre preço...")
+    tema = st.text_input("Qual o tema ou objetivo da sequência?", placeholder="Ex: Por que meu serviço é exclusivo...")
 
 with col2:
     tom_voz = st.selectbox("Tom de Voz", ["Profissional e Autoritário", "Educativo e Calmo", "Direto e Comercial", "Inspirador"])
 
-if st.button("Gerar Sequência de 5+ Stories"):
+# 4. Lógica de Geração
+if st.button("Gerar Sequência Estratégica"):
     if not tema:
-        st.error("Por favor, descreva o tema para prosseguir.")
+        st.error("Por favor, descreva o tema.")
     else:
-        with st.spinner('A IA está estruturando sua narrativa estratégica...'):
+        with st.spinner('O Gemini está estruturando sua narrativa...'):
             try:
-                # Prompt Refinado para Profissionalismo e Quantidade
                 prompt = f"""
-                Atue como um estrategista de conteúdo para Instagram. 
-                Crie uma sequência de no MÍNIMO 5 stories sobre: {tema}.
-                O tom de voz deve ser: {tom_voz}.
-                
-                Estruture a sequência para que tenha:
-                1. Gancho de atenção (Hook)
-                2. Desenvolvimento do problema/solução
-                3. Prova social ou autoridade
-                4. Quebra de objeção
-                5. Chamada para ação clara (CTA)
-
-                Responda APENAS com um JSON no formato abaixo:
+                Atue como um estrategista de conteúdo. Crie uma sequência de no MÍNIMO 5 stories sobre: {tema}.
+                Tom de voz: {tom_voz}.
+                Estrutura: Gancho, Problema, Autoridade, Objeção e CTA.
+                Responda APENAS com um JSON puro (sem markdown) no formato:
                 [
-                  {{"id": 1, "visual": "descrição da cena", "legenda": "texto curto para tela", "fala": "script detalhado"}},
+                  {{"id": 1, "visual": "cena", "legenda": "texto", "fala": "script"}},
                   ...
                 ]
                 """
                 
                 response = model.generate_content(prompt)
-                
-                # Limpeza de Markdown do JSON
+                # Limpeza para garantir que o JSON seja lido corretamente
                 clean_text = response.text.replace('```json', '').replace('```', '').strip()
                 stories = json.loads(clean_text)
 
-                # 4. Exibição em Grid (Opcional: 1 por linha para foco)
+                # 5. Exibição dos Stories
                 for story in stories:
                     with st.container(border=True):
-                        c1, c2 = st.columns([1, 4])
+                        c1, c2 = st.columns([1, 5])
                         with c1:
-                            st.markdown(f"## 🎬 {story['id']}")
+                            st.subheader(f"#{story['id']}")
                         with c2:
-                            st.caption("📸 VISUAL RECOMENDADO")
-                            st.write(story['visual'])
-                            
-                            st.caption("✍️ LEGENDA (TELA)")
+                            st.markdown(f"**🎥 Visual:** {story['visual']}")
+                            st.markdown("**📝 Legenda (Copie abaixo):**")
                             st.code(story['legenda'], language=None)
-                            
-                            st.caption("🗣️ SCRIPT DE FALA")
-                            st.info(story['fala'])
+                            st.info(f"🗣️ **O que falar:** {story['fala']}")
                 
-                st.success(f"Sequência de {len(stories)} stories gerada com sucesso!")
+                st.success("Pronto! Agora é só gravar.")
 
             except Exception as e:
-                st.error(f"Ocorreu um erro na geração. Verifique sua chave de API ou tente novamente. Erro: {e}")
+                st.error(f"Erro ao processar: {e}")
