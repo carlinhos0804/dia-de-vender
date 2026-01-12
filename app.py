@@ -4,11 +4,11 @@ import json
 import time
 from datetime import datetime, timedelta
 
-# 1. O MOTOR MAIS CONSISTENTE
+# 1. MOTOR ESTÁVEL
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 model = genai.GenerativeModel('gemini-1.5-flash')
 
-# 2. DESIGN PREMIUM (Ouro, Verde e Preto)
+# 2. DESIGN
 st.set_page_config(page_title="Expert Stories Pro", page_icon="🎬", layout="centered")
 
 st.markdown("""
@@ -26,7 +26,9 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. GERENCIAMENTO DE REQUISIÇÃO (30s)
+# 3. MEMÓRIA DO APP (Persistência)
+if 'stories' not in st.session_state:
+    st.session_state.stories = None
 if 'last_run' not in st.session_state:
     st.session_state.last_run = None
 
@@ -34,53 +36,56 @@ def can_run():
     if st.session_state.last_run is None: return True
     return datetime.now() - st.session_state.last_run > timedelta(seconds=30)
 
-# 4. IDENTIDADE
+# 4. CABEÇALHO
 URL_LOGO = "https://i.postimg.cc/v1zDLM9S/image.png" 
 st.markdown(f'<div class="logo-container"><img src="{URL_LOGO}" class="logo-img"></div>', unsafe_allow_html=True)
 st.title("Expert Stories Pro")
 
 # 5. INPUTS
-tema = st.text_input("Qual o tema de hoje?", placeholder="Ex: Bastidores da Loja")
+tema = st.text_input("Qual o tema de hoje?", placeholder="Ex: Promoção de Verão")
 estilo = st.selectbox("Personalidade", ["Venda Direta", "Autoridade", "Humanizado"])
 
-# 6. EXECUÇÃO DE SUCESSO
+# 6. LOGICA DE GERAÇÃO
 if can_run():
     if st.button("🚀 GERAR 5 STORIES AGORA"):
         if tema:
-            with st.spinner('A IA está gerando suas 5 ideias...'):
+            with st.spinner('O motor está criando suas 5 ideias...'):
                 try:
-                    # Prompt estruturado para 5 blocos exatos
-                    prompt = f"Crie 5 stories para Instagram sobre {tema} no estilo {estilo}. Responda apenas um JSON: [{{'horario': '...', 'cena': '...', 'jeito': '...', 'fala': '...'}}]"
-                    
+                    prompt = f"Crie 5 stories para Instagram sobre {tema} no estilo {estilo}. Responda apenas JSON: [{{'horario': '...', 'cena': '...', 'jeito': '...', 'fala': '...'}}]"
                     response = model.generate_content(prompt)
                     res_text = response.text.strip()
                     
-                    # Limpeza agressiva de formato
                     if "```json" in res_text:
                         res_text = res_text.split("```json")[1].split("```")[0].strip()
                     elif "```" in res_text:
                         res_text = res_text.split("```")[1].split("```")[0].strip()
                     
-                    stories = json.loads(res_text)
+                    # Salva na memória da sessão para não sumir
+                    st.session_state.stories = json.loads(res_text)
                     st.session_state.last_run = datetime.now()
-
-                    for s in stories:
-                        st.markdown(f"""
-                        <div class="stBox">
-                            <span class="horario-tag">⌚ {s.get('horario', 'Sugerido')}</span>
-                            <p><b>🎬 Cena:</b> {s.get('cena', '...')}</p>
-                            <p><b>🤳 Gravação:</b> {s.get('jeito', '...')}</p>
-                            <div class="fala-texto">"{s.get('fala', '...')}"</div>
-                        </div>
-                        """, unsafe_allow_html=True)
                     st.rerun()
                 except Exception as e:
-                    st.error("Aguarde o contador de segurança para nova tentativa.")
-                    st.session_state.last_run = datetime.now()
+                    st.error("Erro na IA. Tente um tema mais simples.")
         else:
             st.warning("Preencha o tema.")
 else:
+    # Mostra o tempo restante de forma discreta
     rem = 30 - int((datetime.now() - st.session_state.last_run).total_seconds())
-    st.button(f"⏳ RECARREGANDO EM {rem}s", disabled=True)
+    st.info(f"⏳ IA recarregando. Novo roteiro disponível em {rem}s")
+
+# 7. EXIBIÇÃO DAS IDEIAS (Fora do botão para serem permanentes)
+if st.session_state.stories:
+    for s in st.session_state.stories:
+        st.markdown(f"""
+        <div class="stBox">
+            <span class="horario-tag">⌚ {s.get('horario', 'Sugerido')}</span>
+            <p><b>🎬 Cena:</b> {s.get('cena', '...')}</p>
+            <p><b>🤳 Gravação:</b> {s.get('jeito', '...')}</p>
+            <div class="fala-texto">"{s.get('fala', '...')}"</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+# Atualiza o contador apenas se ainda estiver no tempo de espera
+if not can_run():
     time.sleep(1)
     st.rerun()
