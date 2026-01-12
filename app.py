@@ -5,7 +5,7 @@ import json
 # 1. Configuração da API
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 # Usando o modelo flash para velocidade, ou 'gemini-1.5-pro' para mais qualidade
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-pro')
 
 # 2. Configuração da Página
 st.set_page_config(page_title="Expert Stories - Business", page_icon="👔", layout="wide")
